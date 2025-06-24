@@ -53,7 +53,7 @@ public class CategoryController {
     public ResponseEntity<HttpStatus>deleteCategory(@PathVariable Long id){
         try {
             categoryService.deleteCategory(id);
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }catch (IllegalArgumentException e){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

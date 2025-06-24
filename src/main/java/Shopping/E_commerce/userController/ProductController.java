@@ -1,5 +1,7 @@
 package Shopping.E_commerce.userController;
 
+import Shopping.E_commerce.authrequest.ProductDTO;
+import Shopping.E_commerce.exception.ProductDeletionException;
 import Shopping.E_commerce.userService.ProductService;
 import Shopping.E_commerce.usershops.Product;
 import org.springframework.http.HttpStatus;
@@ -15,14 +17,15 @@ public class ProductController {
     private final ProductService productService;
 
     public ProductController(ProductService productService) {
+
         this.productService = productService;
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
+    public ResponseEntity<Product> createProduct(@RequestBody ProductDTO productDTO) {
         try {
-            Product newProduct = productService.createProduct(product);
+            Product newProduct = productService.createProduct(productDTO);
             return new ResponseEntity<>(newProduct, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
@@ -63,12 +66,14 @@ public class ProductController {
     }
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<HttpStatus>deleteProduct(@PathVariable Long id){
+    public ResponseEntity<String>deleteProduct(@PathVariable Long id) {
         try {
             productService.deleteProduct(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }catch (IllegalArgumentException e){
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Product with ID " + id + " deleted successfully.", HttpStatus.NO_CONTENT);
+        } catch (ProductDeletionException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
+        } catch (Exception e) {
+            return new ResponseEntity<>("An unexpected error occurred during product deletion.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

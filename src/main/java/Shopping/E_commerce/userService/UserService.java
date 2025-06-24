@@ -1,5 +1,7 @@
 package Shopping.E_commerce.userService;
 
+import Shopping.E_commerce.authrequest.UserUpdateRequestDTO;
+import Shopping.E_commerce.exception.DuplicateUserException;
 import Shopping.E_commerce.userRepo.UsersRepository;
 import Shopping.E_commerce.usershops.Role;
 import Shopping.E_commerce.usershops.Users;
@@ -25,11 +27,11 @@ public class UserService implements UserDetailsService {
     @Transactional
     public Users registerUser(Users user){
         if (usersRepository.findByUsername(user.getUsername()).isPresent()){
-            throw new IllegalArgumentException("Username already taken."
+            throw new DuplicateUserException("Username '" + user.getUsername() + "' already exists."
 
             );
         }if (usersRepository.findByEmail(user.getEmail()).isPresent()){
-            throw new IllegalArgumentException("Email already registered") ;
+            throw new DuplicateUserException("Email '" + user.getEmail() + "' already exists.") ;
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -40,27 +42,31 @@ public class UserService implements UserDetailsService {
 
     }@Transactional(readOnly = true)
     public List<Users>getAllUsers(){
+
         return usersRepository.findAll();
     }
+    @Transactional(readOnly = true)
     public Optional<Users>getUsersById(Long id){
+
         return usersRepository.findById(id);
     }
+
     @Transactional
-    public Users updateUser(Long id,Users userDetails){
+    public Users updateUser(Long id, UserUpdateRequestDTO userUpdateRequest){
         Users users = usersRepository.findById(id)
                 .orElseThrow(()-> new UsernameNotFoundException("User not found with id:" + id));
-        users.setEmail(userDetails.getUsername());
-        users.setUsername(userDetails.getUsername());
-        if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()){
-            users.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+        users.setEmail(userUpdateRequest.getEmail());
+        users.setUsername(userUpdateRequest.getUsername());
+        if (userUpdateRequest.getPassword() != null && !userUpdateRequest.getPassword().isEmpty()){
+            users.setPassword(passwordEncoder.encode(userUpdateRequest.getPassword()));
         }
-        users.setRole(userDetails.getRole());
+        users.setRole(userUpdateRequest.getRole());
         return usersRepository.save(users);
     }
     @Transactional
     public void deleteUser(Long id){
         if (!usersRepository.existsById(id)){
-            throw new UsernameNotFoundException("User not found with id:" + id);
+            throw new IllegalArgumentException("User not found with id:" + id);
 
         }
         usersRepository.deleteById(id);

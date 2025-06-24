@@ -26,10 +26,12 @@ public class CategoryService {
     }
     @Transactional(readOnly = true)
     public List<Category>getAllCategories(){
+
         return categoryRepository.findAll();
     }
     @Transactional(readOnly = true)
     public Optional<Category>getCategoryById(Long id){
+
         return categoryRepository.findById(id);
     }
     @Transactional

@@ -1,5 +1,6 @@
 package Shopping.E_commerce.userService;
 
+import Shopping.E_commerce.authrequest.OrderItemDTO;
 import Shopping.E_commerce.dto.OrderResponseDTO;
 import Shopping.E_commerce.dto.OrderItemResponseDTO;
 import Shopping.E_commerce.dto.ProductResponseDTO;
@@ -82,7 +83,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Order placeOrder(Long userId, List<OrderItem> items) {
+    public Order placeOrder(Long userId, List<OrderItemDTO> items) {
         Users users = usersRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
@@ -93,21 +94,21 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
-        for (OrderItem itemRequest : items) {
-            Product product = productRepository.findById(itemRequest.getProduct().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + itemRequest.getProduct().getId()));
+        for (OrderItemDTO orderItemDTO: items) {
+            Product product = productRepository.findById(orderItemDTO.getProductId())
+                    .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + orderItemDTO.getProductId()));
 
-            if (product.getStockQuantity() < itemRequest.getQuantity()) {
-                throw new IllegalArgumentException("Not enough stock for product: " + product.getName() + ". Available: " + product.getStockQuantity() + ", Requested: " + itemRequest.getQuantity());
+            if (product.getStockQuantity() < orderItemDTO.getQuantity()) {
+                throw new IllegalArgumentException("Not enough stock for product: " + product.getName() + ". Available: " + product.getStockQuantity() + ", Requested: " + orderItemDTO.getQuantity());
             }
 
-            product.setStockQuantity(product.getStockQuantity() - itemRequest.getQuantity());
+            product.setStockQuantity(product.getStockQuantity() - orderItemDTO.getQuantity());
             productRepository.save(product);
 
             OrderItem newOrderItem = new OrderItem();
             newOrderItem.setOrder(order);
             newOrderItem.setProduct(product);
-            newOrderItem.setQuantity(itemRequest.getQuantity());
+            newOrderItem.setQuantity(orderItemDTO.getQuantity());
             newOrderItem.setUnitPrice(product.getPrice());
 
             totalAmount = totalAmount.add(product.getPrice().multiply(BigDecimal.valueOf(newOrderItem.getQuantity())));
@@ -142,6 +143,12 @@ public class OrderService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+    public boolean isOrderOwner(Long orderId, Long userId) {
+        return orderRepository.findById(orderId)
+                .map(order -> order.getUsers().getId().equals(userId))
+                .orElse(false);
+    }
+
 
     @Transactional
     public OrderResponseDTO updateOrderStatus(Long orderId, OrderStatus newStatus){
@@ -150,5 +157,15 @@ public class OrderService {
         order.setStatus(newStatus);
         Order updatedOrder = orderRepository.save(order);
         return convertToDto(updatedOrder);
+
     }
+    @Transactional
+    public void deleteOrderById(Long orderId) {
+        if (!orderRepository.existsById(orderId)) {
+            throw new IllegalArgumentException("Order not found with id: " + orderId);
+        }
+        orderRepository.deleteById(orderId);
+    }
+
+
 }

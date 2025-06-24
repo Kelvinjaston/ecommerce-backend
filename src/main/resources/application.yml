@@ -1,3 +1,4 @@
+
 server:
   port: 8080
 
@@ -8,22 +9,59 @@ spring:
     password: Globaldolls.27
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
-      open-in-view: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
       hibernate:
-        ddl-auto: update
-      show-sql: true
-      properties:
-        hibernate:
-          format_sql: true
-  jwt:
-    secret: B0oIsNGnNKM9XbxtcRi6UqRFfJwvolYFViLndKszExg
-    expiration: 86400000
+        format_sql: true
 
+jwt:
+  secret: B0oIsNGnNKM9XbxtcRi6UqRFfJwvolYFViLndKszExg
+  expiration: 86400000
 
 logging:
   level:
     root: INFO
     org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.hibernate: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.dao: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    Shopping.E_commerce: DEBUG
+
+---
+# --- TEST PROFILE (Overrides default configuration when 'test' profile is active) ---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  datasource.hikari.pool-name: test-hikari-pool
+  datasource.hikari.maximum-pool-size: 5
+jwt:
+  secret: B0oIsNGnNKM9XbxtcRi6UqRFfJwvolYFViLndKszExg
+  expiration: 86400000
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: INFO
     org.hibernate.SQL: DEBUG
     org.springframework.hibernate: DEBUG
     org.springframework.web: DEBUG

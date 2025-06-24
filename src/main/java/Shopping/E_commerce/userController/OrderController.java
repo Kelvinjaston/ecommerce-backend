@@ -1,5 +1,6 @@
 package Shopping.E_commerce.userController;
 
+import Shopping.E_commerce.authrequest.OrderItemDTO;
 import Shopping.E_commerce.dto.OrderResponseDTO;
 import Shopping.E_commerce.userService.OrderService;
 import Shopping.E_commerce.usershops.Order;
@@ -21,12 +22,13 @@ public class OrderController {
     private final OrderService orderService;
 
     public OrderController(OrderService orderService) {
+
         this.orderService = orderService;
     }
 
     @PostMapping("/place/{userId}")
-    @PreAuthorize("hasAuthority('ROLE_USER') and #userId == authentication.principal.id")
-    public ResponseEntity<Order>placeOrder(@PathVariable Long userId, @RequestBody List<OrderItem>items){
+    @PreAuthorize("(hasAuthority('ROLE_USER') or hasAuthority('ROLE_ADMIN')) and @authService.hasUserId(#userId)")
+    public ResponseEntity<Order>placeOrder(@PathVariable Long userId, @RequestBody List<OrderItemDTO>items){
         try {
             Order newOrder = orderService.placeOrder(userId, items);
             return new ResponseEntity<>(newOrder, HttpStatus.CREATED);
@@ -43,7 +45,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN') or (hasAuthority('ROLE_USER') and @orderService.getOrderById(#id).isPresent() and @orderService.getOrderById(#id).get().user.id == ((Shopping.E_commerce.usershops.Users) authentication.principal).getId())")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or (hasAuthority('ROLE_USER') and @orderService.isOrderOwner(#id, authentication.principal.id))")
     public ResponseEntity<OrderResponseDTO>getOrderById(@PathVariable Long id){ // Changed return type to OrderResponseDTO
         Optional<OrderResponseDTO> orderOptional = orderService.getOrderById(id); // Call method returning Optional<OrderResponseDTO>
         return orderOptional
@@ -69,4 +71,11 @@ public class OrderController {
             return new ResponseEntity<>(null,HttpStatus.BAD_REQUEST);
         }
     }
+    @DeleteMapping("/{orderId}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<Void> deleteOrder(@PathVariable Long orderId) {
+        orderService.deleteOrderById(orderId);
+        return ResponseEntity.noContent().build();
+    }
+
 }
